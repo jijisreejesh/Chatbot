@@ -21,9 +21,9 @@ const routes=[
     component:Signup
    },
    {
-    path:'/dashboard',
-    name:'dashboard',
-    component:Dashboard
+    path:'/dashboard/:id',
+    component:Dashboard,
+    props : true // Pass route params as props to the component
    }
 ]
 

@@ -1,18 +1,16 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, reactive } from "vue";
 import { useRouter } from "vue-router";
 const usersArray = ref([]);
 const checkedState = ref(false);
 onMounted(() => {
   let retrievedData = localStorage.getItem("user");
-  usersArray.value = JSON.parse(retrievedData);
+  usersArray.value = retrievedData?JSON.parse(retrievedData):[];
   console.log(usersArray.value);
 });
-// watch(()=>{(newValue)=>{
 
-// }
-//})
 const user = ref({
+  id: "",
   name: "",
   email: "",
   password: "",
@@ -25,33 +23,50 @@ const handleCancel = () => {
   router1.push("/");
 };
 const handleSignup = () => {
-  // if (usersArray.value.length <= 0) {
-  //   usersArray.value.push(user.value);
-  //   localStore();
-  //   alert("Registration Successful")
-  //   user.value.name = "";
-  //   user.value.email = "";
-  //   user.value.password = "";
-  //   checkedState.value = false;
-  // } 
-  // else {
-    let checkEmailExist = usersArray.value.some((i) => {
-      return i.email === user.value.email;
+   if (usersArray.value.length===0) 
+   {
+    const getRandomNumber = (min, max) => {
+      return Math.random() * (max - min) + min;
+     };
+
+    user.value.id = getRandomNumber(0, 10000);
+    usersArray.value.push(user.value);
+    localStore();
+    alert("Registration Successful");
+    user.value.name = "";
+    user.value.email = "";
+    user.value.password = "";
+    checkedState.value = false;
+   }
+  else {
+  let checkEmailExist = usersArray.value.some((i) => {
+    return i.email === user.value.email;
+  });
+  if (checkEmailExist) {
+    console.log("Exists",checkEmailExist);
+    alert("User Already Exists");
+  } else {
+    const getRandomNumber = (min, max) => {
+      return Math.random() * (max - min) + min;
+    };
+
+    user.value.id = getRandomNumber(0, 10000);
+    let checkId = usersArray.value.some((i) => {
+      return i.id === user.id;
     });
-    if (checkEmailExist) {
-      //console.log("Exists",checkEmailExist); 
-      alert("User Already Exists");
-    } 
-    else {
-      usersArray.value.push(user.value);
-      localStore();
-      alert("Registration Successful")
-      user.value.name = "";
-      user.value.email = "";
-      user.value.password = "";
-      checkedState.value = false;
+    if (checkId) {
+      user.id = getRandomNumber(0, 10000);
+    }
+    usersArray.value.push(user.value);
+    localStore();
+    alert("Registration Successful");
+    user.value.name = "";
+    user.value.email = "";
+    user.value.password = "";
+    checkedState.value = false;
     //}
   }
+}
 };
 const myPassword = () => {
   checkedState.value = !checkedState.value;
@@ -101,7 +116,6 @@ const myPassword = () => {
 <style>
 form {
   margin-top: 100px;
-  
 }
 form fieldset {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);

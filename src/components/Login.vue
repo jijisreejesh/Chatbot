@@ -5,12 +5,13 @@ const usersArray = ref([]);
 const router1=useRouter();
 
 const user = ref({
+  id:'',
   email: "",
   password: "",
 });
 onMounted(() => {
   let retrievedData = localStorage.getItem("user");
-  usersArray.value = JSON.parse(retrievedData);
+  usersArray.value = retrievedData?JSON.parse(retrievedData):[];
   console.log(usersArray.value);
 });
 const handleCancel=()=>{
@@ -20,20 +21,35 @@ const handleCancel=()=>{
 const handleLogin=()=>{
 if(usersArray.value.length)
 {
-    let checkUserEmail=usersArray.value.find((i)=>{
+    let userDetails=usersArray.value.find((i)=>{
           return i.email===user.value.email
     })
-    let checkUserPassword=usersArray.value.find((i)=>{
-     return i.password===user.value.password
-    })
-    if(!checkUserEmail || !checkUserPassword)
+    if(!userDetails)
     {
-        alert('Username or Password InCorrect')
+        alert('UserName or password mismatch')
     }
+    else
+    {
+    user.value.id=userDetails.id;
+    let checkUserFound=usersArray.value.find((i)=>{
+     return i.id===user.value.id
+    })
+   //console.log(checkUseFound);
+   if(checkUserFound.email===user.value.email && checkUserFound.password===user.value.password)
+   {
+    router1.replace(`/dashboard/${user.value.id}`)
+   }
    else
-     router1.replace({name:'dashboard'})
+   {
+    alert('UserName or password mismatch')
+   }
+   
+  }
 }
-}
+else
+{
+ alert("No User exists")
+}}
 </script>
 
 <template>
