@@ -1,6 +1,7 @@
-
 <script setup>
 import { ref, defineProps, onMounted } from "vue";
+import { useRouter } from "vue-router";
+const router1 = useRouter();
 const usersArray = ref([]);
 const props = defineProps({
   id: {
@@ -8,73 +9,118 @@ const props = defineProps({
     required: true,
   },
 });
-//let previousReceiver;
 const msg = ref("");
-const chatArray = ref([]);
-const chatDetails = ref({
-  from: {},
-  to: {},
+const chatArrayForLocalStorage = ref([]);
+const chatDetailsObject = ref({
+  messageId: "",
   messages: [],
 });
+let indexOfChat;
+const msgsArray = ref([]);
+const chatMessage = ref({
+  from: "",
+  to: "",
+  message: "",
+  time: "",
+});
+let loginUsername = "";
+let newChat = false;
 const selectedUser = ref(null);
 const localStore = () => {
-  localStorage.setItem("chats", JSON.stringify(chatArray.value));
+  localStorage.setItem("chats", JSON.stringify(chatArrayForLocalStorage.value));
 };
 onMounted(() => {
+  //Retrieve All Users who registered
   let retrievedData = localStorage.getItem("user");
-  usersArray.value = JSON.parse(retrievedData);
-  const arrayFiltered = usersArray.value.filter((i) => {
-    return i.id != props.id;
-  });
-  let userDetails = usersArray.value.find((i) => {
-    return i.id == props.id;
-  });
-  chatDetails.value.from = userDetails;
-  usersArray.value = arrayFiltered;
+  if (retrievedData) {
+    usersArray.value = JSON.parse(retrievedData);
 
-  let retrievedChats = localStorage.getItem("chats");
-  chatArray.value = retrievedChats?JSON.parse(retrievedChats):[];
+    //Filter array ,only contain receivers,,not contain login user
+    const arrayFiltered = usersArray.value.filter((i) => {
+      return i.id != props.id;
+    });
+    let userDetails = usersArray.value.find((i) => {
+      return i.id == props.id;
+    });
+    if (userDetails) {
+      chatMessage.value.from = userDetails.id;
+      loginUsername = userDetails.name;
+    }
+
+    usersArray.value = arrayFiltered;
+  }
+
+  retrieveChats();
 });
+const retrieveChats = () => {
+  const retrievedChats = localStorage.getItem("chats");
+  chatArrayForLocalStorage.value = retrievedChats
+    ? JSON.parse(retrievedChats)
+    : [];
+};
 
 const selectUser = (i) => {
   selectedUser.value = i;
-  chatDetails.value.to = selectedUser.value;
-    
-   if (chatArray.value.length !== 0) {
-    //console.log(chatArray.value);
-      const chatFound = chatArray.value.find((i) => {
-        return (i.to.id === chatDetails.value.to.id) && (i.from.id===chatDetails.value.from.id);
-      });
-      if (chatFound) {
-        //console.log(chatFound.messages);
-         chatDetails.value.messages=[];
-        chatDetails.value.messages = chatFound.messages;
-        console.log(chatFound);
-        
-      }
-      else{
-        chatDetails.value.messages=[];
-      }
-    }
-  // selectedUser.value = i;
-  // chatDetails.value.to = selectedUser.value;
-};
-const sendMessage = () => {
-  if(msg){
-  chatDetails.value.messages.push(msg.value);
-if (chatDetails.value.messages.length !== 0) {
-    chatArray.value.push(chatDetails.value);
-    localStore();
-    }
+  chatMessage.value.to = selectedUser.value.id;
+  chatDetailsObject.value.messageId =
+    chatMessage.value.from + "-" + chatMessage.value.to;
+  //let msgId = chatMessage.value.to+"-"+chatMessage.value.from;
+  let msgFrom = chatDetailsObject.value.messageId.split("-");
+  msgFrom = msgFrom.reverse();
+  msgFrom = msgFrom.join("-");
+  //console.log(msgFrom);
+  const chatFound = chatArrayForLocalStorage.value.find((i) => {
+    return (
+      i.messageId === chatDetailsObject.value.messageId ||
+      i.messageId === msgFrom
+    );
+  });
+  if (chatFound) {
+    indexOfChat = chatArrayForLocalStorage.value.indexOf(chatFound);
+    chatDetailsObject.value.messages = chatFound.messages;
+    newChat = false;
+  } else {
+    indexOfChat = -1;
+    chatDetailsObject.value.messages = [];
+    newChat = true;
   }
-    msg.value = "";
+
+  msgsArray.value = chatDetailsObject.value.messages;
+};
+
+const sendMessage = () => {
+  if (!msg.value) return;
+
+  const newMessage = {
+    ...chatMessage.value,
+    message: msg.value,
+    time: new Date().toISOString(),
+  };
+
+  chatDetailsObject.value.messages.push(newMessage);
+
+  if (newChat) {
+    chatArrayForLocalStorage.value.push({ ...chatDetailsObject.value });
+    newChat = false;
+  } else if (indexOfChat !== -1) {
+    chatArrayForLocalStorage.value[indexOfChat].messages = [
+      ...chatDetailsObject.value.messages,
+    ];
+  }
+
+  localStore();
+  msgsArray.value = [...chatDetailsObject.value.messages];
+  msg.value = "";
+};
+const handleLogout = () => {
+  router1.replace("/");
 };
 </script>
 
 <template>
   <div id="app" class="chat-app">
     <div class="sidebar">
-      <h1>Welcome {{ chatDetails.from.name }}</h1>
+      <h1>Welcome {{ loginUsername }}</h1>
       <ul>
         <li
           v-for="i in usersArray"
@@ -85,22 +131,36 @@ if (chatDetails.value.messages.length !== 0) {
           {{ i.name }}
         </li>
       </ul>
+      <button @click="handleLogout">LogOut</button>
     </div>
     <div class="chat-window" v-if="selectedUser">
       <h3>
         Chat with <span v-if="selectedUser">{{ selectedUser.name }}</span>
       </h3>
       <div class="chat-messages">
-      <div v-if="chatDetails.messages">
-         <div
-            v-for="(i,index) in chatDetails.messages"
+        <div v-if="msgsArray.length">
+          <div
+            v-for="(i, index) in msgsArray"
             :key="index"
-            class='message'
+            class="message"
+            :class="{
+              sender: i.from === props.id,
+              receiver: i.from != props.id,
+            }"
           >
-            {{ i }}
+            {{ i.message }}
+            <sub style="float: right">{{
+              new Date(i.time).toLocaleTimeString([], {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })
+            }}</sub>
           </div>
-      </div>
-        
+        </div>
       </div>
       <div class="chat-input">
         <input
@@ -130,6 +190,7 @@ if (chatDetails.value.messages.length !== 0) {
   background: #f4f4f4;
   padding: 20px;
   overflow-y: auto;
+  position: relative;
 }
 
 .sidebar ul {
@@ -142,12 +203,26 @@ if (chatDetails.value.messages.length !== 0) {
   cursor: pointer;
   border-bottom: 1px solid #ddd;
 }
-
+.sidebar h1 {
+  margin-bottom: 20px;
+  color: green;
+}
 .sidebar li.active {
   background: #ddd;
   font-weight: bold;
 }
-
+.sidebar button {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 20px;
+  font-size: xx-large;
+  background-color: red;
+  border-radius: 10px;
+  padding: 3px;
+}
+.sidebar button:active {
+  background-color: #007bff;
+}
 .chat-window {
   width: 100%;
   flex: 1;
@@ -157,24 +232,39 @@ if (chatDetails.value.messages.length !== 0) {
   background: #fff;
   border-left: 1px solid #ddd;
 }
-
+.chat-window h3 {
+  color: rgb(138, 11, 177);
+}
+.chat-input button{
+  font-size: large;
+  padding: 3px;
+  padding-left: 5px;
+  padding-right: 5px;
+  background-color: #ebd086;
+  color: red;
+  border-radius: 10px;
+}
+.chat-input button:active{
+  background-color: #007bff;
+}
 .chat-messages {
   flex: 1;
-  overflow-y: auto;
+  /* overflow-y: auto; */
   padding-bottom: 20px;
 }
 
 .message {
+  color: whitesmoke;
   padding: 10px;
   margin-bottom: 10px;
   border-radius: 5px;
   background-color: #007bff;
-}
-
-.message.sent {
-  align-self: flex-end;
-  background: #007bff;
-  color: white;
+  overflow: hidden;
+  max-width: 70%;
+  word-wrap: break-word; /* Allow words to break */
+  overflow: hidden; /* Hide overflowing content */
+  text-overflow: ellipsis; /* Add "..." for overflowing text */
+  white-space: wrap; /* Prevent text wrapping */
 }
 
 .chat-input {
@@ -196,7 +286,15 @@ if (chatDetails.value.messages.length !== 0) {
   color: #888;
 }
 .selected {
-  background-color: #007bff;
+  background-color: #74a9e2;
   color: white;
 }
-</style>  
+
+.receiver {
+  margin-left: auto;
+  align-self: flex-start;
+  background-color: #f1f1f1;
+  color: black;
+  text-align: left;
+}
+</style>
