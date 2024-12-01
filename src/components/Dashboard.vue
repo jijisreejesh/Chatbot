@@ -15,6 +15,7 @@ const chatDetailsObject = ref({
   messageId: "",
   messages: [],
 });
+console.log("Hai");
 let indexOfChat;
 const msgsArray = ref([]);
 const chatMessage = ref({
