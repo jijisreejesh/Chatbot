@@ -9,15 +9,19 @@ const props = defineProps({
     required: true,
   },
 });
+//msg from input box
 const msg = ref("");
 const chatArrayForLocalStorage = ref([]);
+//object which push to chatArrayForLocalStorage
 const chatDetailsObject = ref({
   messageId: "",
   messages: [],
 });
-console.log("Hai");
+//current chat index in localstorage
 let indexOfChat;
+//only insert chatMessage details  for display in chat window
 const msgsArray = ref([]);
+
 const chatMessage = ref({
   from: "",
   to: "",
@@ -81,7 +85,7 @@ const selectUser = (i) => {
     chatDetailsObject.value.messages = chatFound.messages;
     newChat = false;
   } else {
-    indexOfChat = -1;
+   // indexOfChat = -1;
     chatDetailsObject.value.messages = [];
     newChat = true;
   }
@@ -90,29 +94,29 @@ const selectUser = (i) => {
 };
 
 const sendMessage = () => {
-  if (!msg.value) return;
+  if (msg.value) {
+    //Cloning ensures that the data stored for each message is distinct and separate from other messages. This is important in JavaScript, where objects and arrays are stored and passed by reference.
+    // Clone the chatMessage object for each message
+    const newMessage = { ...chatMessage.value, message: msg.value, time: new Date().toISOString() };
+    
+    // Push the cloned message to the messages array
+    chatDetailsObject.value.messages.push(newMessage);
 
-  const newMessage = {
-    ...chatMessage.value,
-    message: msg.value,
-    time: new Date().toISOString(),
-  };
+    if (newChat) {
+      // Save the new chat object
+      chatArrayForLocalStorage.value.push({ ...chatDetailsObject.value });
+      newChat = false;
+    } else {
+      // Update existing chat's messages
+      chatArrayForLocalStorage.value[indexOfChat].messages = [...chatDetailsObject.value.messages];
+    }
 
-  chatDetailsObject.value.messages.push(newMessage);
-
-  if (newChat) {
-    chatArrayForLocalStorage.value.push({ ...chatDetailsObject.value });
-    newChat = false;
-  } else if (indexOfChat !== -1) {
-    chatArrayForLocalStorage.value[indexOfChat].messages = [
-      ...chatDetailsObject.value.messages,
-    ];
+    localStore();
+    msgsArray.value = [...chatDetailsObject.value.messages];
+    msg.value = "";
   }
-
-  localStore();
-  msgsArray.value = [...chatDetailsObject.value.messages];
-  msg.value = "";
 };
+
 const handleLogout = () => {
   router1.replace("/");
 };
@@ -145,7 +149,7 @@ const handleLogout = () => {
             :key="index"
             class="message"
             :class="{
-              sender: i.from === props.id,
+              sender: i.from == props.id,
               receiver: i.from != props.id,
             }"
           >
@@ -236,7 +240,7 @@ const handleLogout = () => {
 .chat-window h3 {
   color: rgb(138, 11, 177);
 }
-.chat-input button{
+.chat-input button {
   font-size: large;
   padding: 3px;
   padding-left: 5px;
@@ -245,7 +249,7 @@ const handleLogout = () => {
   color: red;
   border-radius: 10px;
 }
-.chat-input button:active{
+.chat-input button:active {
   background-color: #007bff;
 }
 .chat-messages {
@@ -290,9 +294,13 @@ const handleLogout = () => {
   background-color: #74a9e2;
   color: white;
 }
-
-.receiver {
+.sender{
+  background-color:turquoise;
   margin-left: auto;
+  align-self: flex-start;
+}
+.receiver {
+  margin-right: auto;
   align-self: flex-start;
   background-color: #f1f1f1;
   color: black;
