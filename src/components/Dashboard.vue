@@ -11,6 +11,7 @@ const chatArrayForLocalStorage = ref([]);
 //object which push to chatArrayForLocalStorage
 const chatDetailsObject = ref({
   messageId: "",
+  clearChat:[],
   messages: [],
 });
 //current chat index in localstorage
@@ -61,7 +62,7 @@ const selectUser = (i) => {
   chatMessage.value.to = selectedUser.value.id;
   chatDetailsObject.value.messageId =
     chatMessage.value.from + "-" + chatMessage.value.to;
-  //let msgId = chatMessage.value.to+"-"+chatMessage.value.from;
+    chatDetailsObject.value.clearChat=[]
   let msgFrom = chatDetailsObject.value.messageId.split("-");
   msgFrom = msgFrom.reverse();
   msgFrom = msgFrom.join("-");
@@ -76,13 +77,20 @@ const selectUser = (i) => {
     indexOfChat = chatArrayForLocalStorage.value.indexOf(chatFound);
     chatDetailsObject.value.messages = chatFound.messages;
     newChat = false;
+    msgsArray.value = chatDetailsObject.value.messages;
+    if((chatArrayForLocalStorage.value[indexOfChat].clearChat.includes(loggedUser.value.id)))
+    {
+      msgsArray.value=[];
+    }
   } else {
    // indexOfChat = -1;
     chatDetailsObject.value.messages = [];
     newChat = true;
+    msgsArray.value = chatDetailsObject.value.messages;
   }
-
-  msgsArray.value = chatDetailsObject.value.messages;
+ 
+  
+    
 };
 
 const sendMessage = () => {
@@ -101,6 +109,10 @@ const sendMessage = () => {
     } else {
       // Update existing chat's messages
       chatArrayForLocalStorage.value[indexOfChat].messages = [...chatDetailsObject.value.messages];
+      if((chatArrayForLocalStorage.value[indexOfChat].clearChat.includes(loggedUser.value.id)))
+    {
+      msgsArray.value=[];
+    }
     }
 
     localStore();
@@ -108,7 +120,18 @@ const sendMessage = () => {
     msg.value = "";
   }
 };
-
+const clearChat=()=>{
+  console.log("Chat cleared");
+  if(msgsArray.value)
+{
+  chatDetailsObject.value.clearChat.push(loggedUser.value.id);
+  console.log(chatDetailsObject.value);
+  msgsArray.value=[];
+  chatArrayForLocalStorage.value[indexOfChat].clearChat=[...chatDetailsObject.value.clearChat]
+  console.log(chatArrayForLocalStorage.value[indexOfChat]);
+  
+}
+}
 const handleLogout = () => {
   localStorage.removeItem("loggedIn");
   router1.push("/");
@@ -248,7 +271,7 @@ const handleLogout = () => {
 }
 .chat-messages {
   flex: 1;
-  /* overflow-y: auto; */
+  overflow-y: auto;
   padding-bottom: 20px;
 }
 
