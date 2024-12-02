@@ -3,12 +3,8 @@ import { ref, defineProps, onMounted } from "vue";
 import { useRouter } from "vue-router";
 const router1 = useRouter();
 const usersArray = ref([]);
-const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
-});
+let loggedUser=ref({});
+
 //msg from input box
 const msg = ref("");
 const chatArrayForLocalStorage = ref([]);
@@ -28,13 +24,17 @@ const chatMessage = ref({
   message: "",
   time: "",
 });
-let loginUsername = "";
 let newChat = false;
 const selectedUser = ref(null);
 const localStore = () => {
   localStorage.setItem("chats", JSON.stringify(chatArrayForLocalStorage.value));
 };
 onMounted(() => {
+  //retrieve loggedIn user from local storage
+  loggedUser.value=JSON.parse(localStorage.getItem('loggedIn'))
+  if(loggedUser.value){
+      chatMessage.value.from=loggedUser.value.id;  
+  }
   //Retrieve All Users who registered
   let retrievedData = localStorage.getItem("user");
   if (retrievedData) {
@@ -42,16 +42,8 @@ onMounted(() => {
 
     //Filter array ,only contain receivers,,not contain login user
     const arrayFiltered = usersArray.value.filter((i) => {
-      return i.id != props.id;
+      return i.id !== loggedUser.value.id;
     });
-    let userDetails = usersArray.value.find((i) => {
-      return i.id == props.id;
-    });
-    if (userDetails) {
-      chatMessage.value.from = userDetails.id;
-      loginUsername = userDetails.name;
-    }
-
     usersArray.value = arrayFiltered;
   }
 
@@ -118,14 +110,16 @@ const sendMessage = () => {
 };
 
 const handleLogout = () => {
-  router1.replace("/");
+  localStorage.removeItem("loggedIn");
+  localStorage.removeItem("loggedOrNot");
+  router1.push("/");
 };
 </script>
 
 <template>
   <div id="app" class="chat-app">
     <div class="sidebar">
-      <h1>Welcome {{ loginUsername }}</h1>
+      <h1>Welcome {{ loggedUser.name }}</h1>
       <ul>
         <li
           v-for="i in usersArray"
@@ -149,8 +143,8 @@ const handleLogout = () => {
             :key="index"
             class="message"
             :class="{
-              sender: i.from == props.id,
-              receiver: i.from != props.id,
+              sender: i.from == loggedUser.id,
+              receiver: i.from != loggedUser.id,
             }"
           >
             {{ i.message }}

@@ -2,8 +2,7 @@
 import { useRouter } from 'vue-router';
 import {ref,onMounted} from 'vue';
 const usersArray = ref([]);
-const router1=useRouter();
-
+const router=useRouter();
 const user = ref({
   id:'',
   email: "",
@@ -15,7 +14,7 @@ onMounted(() => {
   console.log(usersArray.value);
 });
 const handleCancel=()=>{
-    router1.push('/')
+    router.push('/')
 }
 
 const handleLogin=()=>{
@@ -37,7 +36,9 @@ if(usersArray.value.length)
    //console.log(checkUseFound);
    if(checkUserFound.email===user.value.email && checkUserFound.password===user.value.password)
    {
-    router1.replace(`/dashboard/${user.value.id}`)
+    localStorage.setItem("loggedIn",JSON.stringify(checkUserFound));
+    localStorage.setItem("loggedOrNot",true);
+    router.push(`/dashboard`)
    }
    else
    {

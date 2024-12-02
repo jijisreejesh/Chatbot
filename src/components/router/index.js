@@ -9,23 +9,46 @@ const routes=[
     path: "/",
     name: "home",
     component: Home,
+    meta: { requiresAuth: true } 
    },
    {
     path:'/login',
     name:"login",
-    component:Login
+    component:Login,
+    meta:{requiresAuth:true} 
    },
    {
     path:'/signup',
     name:'signup',
-    component:Signup
+    component:Signup,
+    meta:{requiresAuth:true} 
    },
    {
-    path:'/dashboard/:id',
+    path:'/dashboard',
+    name:'dashboard',
     component:Dashboard,
-    props : true // Pass route params as props to the component
+    meta:{requiresAuth:true} 
    }
 ]
 
 const router=createRouter({history:createWebHistory(),routes});
+
+ 
+router.beforeEach((to,from,next)=>{
+  const isAuthenticated = JSON.parse(localStorage.getItem("loggedIn"));
+  console.log(isAuthenticated);
+   
+   if((isAuthenticated===null) && to.name === "dashboard"){
+      next({name:'login'})
+}
+   else if(isAuthenticated && (to.name === "login"|| to.name==="signup" ||to.path==='/')){
+    
+       next({name:'dashboard'});
+   }
+   else{
+      next(); //If no conditions match, allows navigation to the requested route.
+   }
+})
+
+
 export default router;
