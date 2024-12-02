@@ -37,7 +37,6 @@ if(usersArray.value.length)
    if(checkUserFound.email===user.value.email && checkUserFound.password===user.value.password)
    {
     localStorage.setItem("loggedIn",JSON.stringify(checkUserFound));
-    localStorage.setItem("loggedOrNot",true);
     router.push(`/dashboard`)
    }
    else

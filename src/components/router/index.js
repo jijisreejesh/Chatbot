@@ -36,7 +36,6 @@ const router=createRouter({history:createWebHistory(),routes});
  
 router.beforeEach((to,from,next)=>{
   const isAuthenticated = JSON.parse(localStorage.getItem("loggedIn"));
-  console.log(isAuthenticated);
    
    if((isAuthenticated===null) && to.name === "dashboard"){
       next({name:'login'})

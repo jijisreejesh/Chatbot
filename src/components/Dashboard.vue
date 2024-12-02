@@ -111,7 +111,6 @@ const sendMessage = () => {
 
 const handleLogout = () => {
   localStorage.removeItem("loggedIn");
-  localStorage.removeItem("loggedOrNot");
   router1.push("/");
 };
 </script>
@@ -135,6 +134,7 @@ const handleLogout = () => {
     <div class="chat-window" v-if="selectedUser">
       <h3>
         Chat with <span v-if="selectedUser">{{ selectedUser.name }}</span>
+        <span @click="clearChat" id="clear">Clear Chat</span>
       </h3>
       <div class="chat-messages">
         <div v-if="msgsArray.length">
@@ -265,7 +265,10 @@ const handleLogout = () => {
   text-overflow: ellipsis; /* Add "..." for overflowing text */
   white-space: wrap; /* Prevent text wrapping */
 }
-
+.chat-window h3 #clear{
+  color: red;
+  float:right;
+}
 .chat-input {
   display: flex;
 }
