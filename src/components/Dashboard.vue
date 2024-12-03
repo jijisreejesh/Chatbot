@@ -3,7 +3,7 @@ import { ref, defineProps, onMounted } from "vue";
 import { useRouter } from "vue-router";
 const router1 = useRouter();
 const usersArray = ref([]);
-let loggedUser=ref({});
+let loggedUser = ref({});
 
 //msg from input box
 const msg = ref("");
@@ -11,11 +11,11 @@ const chatArrayForLocalStorage = ref([]);
 //object which push to chatArrayForLocalStorage
 const chatDetailsObject = ref({
   messageId: "",
-  clearChat:[],
+  clearChat: [],
   messages: [],
 });
 //current chat index in localstorage
-let indexOfChat;
+const indexOfChat=ref(null);
 //only insert chatMessage details  for display in chat window
 const msgsArray = ref([]);
 
@@ -32,9 +32,9 @@ const localStore = () => {
 };
 onMounted(() => {
   //retrieve loggedIn user from local storage
-  loggedUser.value=JSON.parse(localStorage.getItem('loggedIn'))
-  if(loggedUser.value){
-      chatMessage.value.from=loggedUser.value.id;  
+  loggedUser.value = JSON.parse(localStorage.getItem("loggedIn"));
+  if (loggedUser.value) {
+    chatMessage.value.from = loggedUser.value.id;
   }
   //Retrieve All Users who registered
   let retrievedData = localStorage.getItem("user");
@@ -62,11 +62,10 @@ const selectUser = (i) => {
   chatMessage.value.to = selectedUser.value.id;
   chatDetailsObject.value.messageId =
     chatMessage.value.from + "-" + chatMessage.value.to;
-    chatDetailsObject.value.clearChat=[]
+  chatDetailsObject.value.clearChat = [];
   let msgFrom = chatDetailsObject.value.messageId.split("-");
   msgFrom = msgFrom.reverse();
   msgFrom = msgFrom.join("-");
-  //console.log(msgFrom);
   const chatFound = chatArrayForLocalStorage.value.find((i) => {
     return (
       i.messageId === chatDetailsObject.value.messageId ||
@@ -74,64 +73,98 @@ const selectUser = (i) => {
     );
   });
   if (chatFound) {
-    indexOfChat = chatArrayForLocalStorage.value.indexOf(chatFound);
+    indexOfChat.value = chatArrayForLocalStorage.value.indexOf(chatFound);
     chatDetailsObject.value.messages = chatFound.messages;
     newChat = false;
+    chatDetailsObject.value.clearChat=chatFound.clearChat;
     msgsArray.value = chatDetailsObject.value.messages;
-    if((chatArrayForLocalStorage.value[indexOfChat].clearChat.includes(loggedUser.value.id)))
-    {
-      msgsArray.value=[];
-    }
-  } else {
-   // indexOfChat = -1;
+    if (chatFound.clearChat.includes(loggedUser.value.id)) 
+      {
+        let clearChatUserId=chatFound.clearChat.indexOf(loggedUser.value.id)
+        //msgsArray.value = chatData.messages.slice(chatData.clearChat[clearChatIndex]);
+        let fromIndexOfChatDisplay=chatFound.clearChat[clearChatUserId+1];
+        msgsArray.value = chatFound.messages.slice(fromIndexOfChatDisplay);
+        
+      }
+  } 
+  else {
     chatDetailsObject.value.messages = [];
+    chatDetailsObject.value.clearChat=[];
     newChat = true;
     msgsArray.value = chatDetailsObject.value.messages;
+    indexOfChat.value=null
   }
- 
-  
-    
+
+ msg.value="";
 };
 
 const sendMessage = () => {
   if (msg.value) {
-    //Cloning ensures that the data stored for each message is distinct and separate from other messages. This is important in JavaScript, where objects and arrays are stored and passed by reference.
-    // Clone the chatMessage object for each message
-    const newMessage = { ...chatMessage.value, message: msg.value, time: new Date().toISOString() };
-    
-    // Push the cloned message to the messages array
+    const newMessage = {
+      ...chatMessage.value,
+      message: msg.value,
+      time: new Date().toISOString(),
+    };
     chatDetailsObject.value.messages.push(newMessage);
 
     if (newChat) {
-      // Save the new chat object
       chatArrayForLocalStorage.value.push({ ...chatDetailsObject.value });
       newChat = false;
-    } else {
-      // Update existing chat's messages
-      chatArrayForLocalStorage.value[indexOfChat].messages = [...chatDetailsObject.value.messages];
-      if((chatArrayForLocalStorage.value[indexOfChat].clearChat.includes(loggedUser.value.id)))
-    {
-      msgsArray.value=[];
+      localStore();
+      indexOfChat.value=chatArrayForLocalStorage.value.length-1;
+    } 
+    else {
+      chatArrayForLocalStorage.value[indexOfChat.value].messages = [
+        ...chatDetailsObject.value.messages,
+      
+      ];
+      localStore()
     }
-    }
-
-    localStore();
-    msgsArray.value = [...chatDetailsObject.value.messages];
+ 
     msg.value = "";
+    msgsArray.value = [...chatDetailsObject.value.messages];
+    if (chatArrayForLocalStorage.value[indexOfChat.value].clearChat.includes(loggedUser.value.id)) 
+    {
+      let clearChatUserId=chatArrayForLocalStorage.value[indexOfChat.value].clearChat.indexOf(loggedUser.value.id)
+        //msgsArray.value = chatData.messages.slice(chatData.clearChat[clearChatIndex]);
+        let fromIndexOfChatDisplay=chatArrayForLocalStorage.value[indexOfChat.value].clearChat[clearChatUserId+1];
+        msgsArray.value = chatArrayForLocalStorage.value[indexOfChat.value].messages.slice(fromIndexOfChatDisplay);
+       //console.log(chatArrayForLocalStorage.value[indexOfChat.value].messages.slice(fromIndexOfChatDisplay));
+    }
   }
 };
-const clearChat=()=>{
+const clearChat = () => {
   console.log("Chat cleared");
-  if(msgsArray.value)
-{
-  chatDetailsObject.value.clearChat.push(loggedUser.value.id);
-  console.log(chatDetailsObject.value);
-  msgsArray.value=[];
-  chatArrayForLocalStorage.value[indexOfChat].clearChat=[...chatDetailsObject.value.clearChat]
-  console.log(chatArrayForLocalStorage.value[indexOfChat]);
-  
-}
-}
+   if (msgsArray.value) {
+     if (chatArrayForLocalStorage.value[indexOfChat.value].clearChat.includes(loggedUser.value.id)) 
+      {
+         let clearChatIndexOfId=chatArrayForLocalStorage.value[indexOfChat.value].clearChat.indexOf(loggedUser.value.id)
+        chatArrayForLocalStorage.value[indexOfChat.value].clearChat[clearChatIndexOfId+1] += msgsArray.value.length;
+      }
+      // else if(chatArrayForLocalStorage.value[indexOfChat.value].clearChat.length)
+      // {
+      //   console.log("hai");
+       
+      //   chatDetailsObject.value.clearChat.push(loggedUser.value.id,msgsArray.value.length);
+      //   console.log(chatDetailsObject.value.clearChat);
+        
+        
+      // }
+      else
+      {
+        chatDetailsObject.value.clearChat.push(loggedUser.value.id,msgsArray.value.length);
+        chatArrayForLocalStorage.value[indexOfChat.value].clearChat = [
+        ...chatDetailsObject.value.clearChat
+
+      ];
+      }
+    
+    
+    localStore();
+    console.log(chatArrayForLocalStorage.value[indexOfChat.value])
+    msgsArray.value=[];   
+   }
+};
 const handleLogout = () => {
   localStorage.removeItem("loggedIn");
   router1.push("/");
@@ -288,9 +321,9 @@ const handleLogout = () => {
   text-overflow: ellipsis; /* Add "..." for overflowing text */
   white-space: wrap; /* Prevent text wrapping */
 }
-.chat-window h3 #clear{
+.chat-window h3 #clear {
   color: red;
-  float:right;
+  float: right;
 }
 .chat-input {
   display: flex;
@@ -314,8 +347,8 @@ const handleLogout = () => {
   background-color: #74a9e2;
   color: white;
 }
-.sender{
-  background-color:turquoise;
+.sender {
+  background-color: turquoise;
   margin-left: auto;
   align-self: flex-start;
 }
